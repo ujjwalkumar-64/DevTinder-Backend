@@ -1,0 +1,24 @@
+{
+  "name": "devtinder-backend",
+  "version": "1.0.0",
+  "description": "a tinder for developers",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start":"node src/app.js",
+     "dev":"nodemon src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ujjwalkumar-64/DevTinder-Backend.git"
+  },
+  "author": "Ujjwal Kumar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ujjwalkumar-64/DevTinder-Backend/issues"
+  },
+  "homepage": "https://github.com/ujjwalkumar-64/DevTinder-Backend#readme",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
