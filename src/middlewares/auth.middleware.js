@@ -4,6 +4,9 @@ import { User } from "../models/userSchema.js"
 const authUser = async(req,res,next)=>{
     try {
         const{token}= req.cookies
+        if(!token){
+            throw new Error("invalid token")
+        }
         const decodedMessage= await jwt.verify(token,"Fguxbybudy6ery4dyugufydyuf7et");
 
         const{_id}= decodedMessage;
@@ -16,7 +19,7 @@ const authUser = async(req,res,next)=>{
         next();
 
     } catch (error) {
-        res.send(400).send("error: ",error.message)
+        res.status(400).send("error: "+ error.message)
     }
 }
 
