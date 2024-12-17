@@ -1,6 +1,7 @@
 import express from "express";
 import {authUser} from "../middlewares/auth.middleware.js"
 import { ConnectionRequest } from "../models/connectionRequestSchema.js";
+import { User } from "../models/userSchema.js";
 
 const userRouter = express.Router();
 
@@ -14,6 +15,7 @@ userRouter.get("/user/requests/received", authUser, async (req,res)=>{
             toUserId:loggedInUser._id,
             status:"interested"
         }).populate("fromUserId",USER_SAFE_DATA)
+        .select("fromUserId")
         
 
         res.json({
@@ -51,6 +53,48 @@ userRouter.get("/user/connections",authUser, async (req,res)=>{
     } catch (error) {
         res.status(400).send("ERROR: "+ error.message)
     }
+})
+
+
+userRouter.get("/user/feed", authUser, async(req,res)=>{
+    try {
+        const loggedInUser= req.user
+        const page= parseInt(req.query.page) || 1
+        let limit= parseInt(req.query.limit) || 10
+        limit= limit >20 ? 10:limit
+        const skip= (page-1)*limit
+
+        const connectionRequests = await ConnectionRequest.find({
+            $or:[
+                {fromUserId:loggedInUser._id},
+                {toUserId:loggedInUser._id}
+            ]
+        }).select("fromUserId toUserId")
+
+        const hideUsersFromFeed = new Set()
+        connectionRequests.forEach((req)=>{
+            hideUsersFromFeed.add(req.fromUserId.toString());
+            hideUsersFromFeed.add(req.toUserId.toString())}
+        )
+        
+        const users= await User.find({
+            $and:[
+                {_id: {$nin: Array.from(hideUsersFromFeed)}},
+                {_id: {$ne : loggedInUser._id}}
+            ]
+
+        }).select(USER_SAFE_DATA)
+        .skip(skip)
+        .limit(limit)
+
+        res.json({
+            message:"data fetch successfully",
+            data:users
+        })
+    } catch (error) {
+        res.status(400).send("ERROR: " + error.message)
+    }
+    
 })
 
 
