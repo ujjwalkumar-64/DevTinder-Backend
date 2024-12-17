@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         lowercase:true,
         trim:true,
         minLength:4,
-        
+        index:true,
     },
     lastName:{
         type:String,
@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
         lowercase:true,
         trim:true,
         minLength:4,
+        index:true,
         
     },
     email:{
@@ -50,7 +51,7 @@ const userSchema = new mongoose.Schema({
         type:String,
         enum:{
             values:["male","female","others"],
-            message:`{value} is not valid type`
+            message:`{VALUE} is not valid type`
         }
         
     },
@@ -98,4 +99,4 @@ userSchema.methods.getJwt= async function () {
 }
 
 
-export const User =mongoose.model("User",userSchema)
+export const User = mongoose.model("User",userSchema)
