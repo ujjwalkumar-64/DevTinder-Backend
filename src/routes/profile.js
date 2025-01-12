@@ -57,7 +57,7 @@ profileRouter.patch("/profile/password",authUser,async(req,res)=>{
     
         await user.save();
 
-        res.send("user password updated" + user)
+        res.json({message:"user password updated", data:user})
         
     } catch (error) {
         res.send("error in password :"+ error.message)

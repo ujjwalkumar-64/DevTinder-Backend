@@ -3,13 +3,14 @@ import { mongoDB } from "./config/mongoDB.js";
  
 import cookieParser from "cookie-parser";
  
-
+import cors from "cors";
 import authRouter from "./routes/auth.js";
 import { profileRouter } from "./routes/profile.js";
  import { connectionRequestRouter } from "./routes/connectionRequest.js";
  import { userRouter } from "./routes/user.js";
 
 const app = express();
+app.use(cors());
  app.use(express.json())
  app.use(cookieParser());
  

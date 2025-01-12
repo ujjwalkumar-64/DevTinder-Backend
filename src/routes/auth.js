@@ -31,7 +31,7 @@ authRouter.post("/signup",async (req,res)=>{
             })
             
           
-        res.send({message:"user added successfully!", data: savedUser})
+        res.json({message:"user added successfully!", data: savedUser})
 
     } catch (error) {
         res.status(400).send("error: " + error.message)
@@ -59,7 +59,10 @@ authRouter.post("/login",async(req,res)=>{
                 expires: new Date(Date.now()+ 1 * 3600000)
             })
             
-            res.send(user)
+            res.json({
+                message:"user login successfully",
+                data:user
+            })
 
         }
 
@@ -74,7 +77,9 @@ authRouter.post("/logout",async(req,res)=>{
             new Date(Date.now())
         
     })
-    res.send()
+    res.json({
+        message:"user logged out"
+    })
 })
 
 export default authRouter;
