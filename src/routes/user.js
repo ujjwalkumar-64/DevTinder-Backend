@@ -60,8 +60,8 @@ userRouter.get("/user/feed", authUser, async(req,res)=>{
     try {
         const loggedInUser= req.user
         const page= parseInt(req.query.page) || 1
-        let limit= parseInt(req.query.limit) || 10
-        limit= limit >20 ? 10:limit
+        let limit= parseInt(req.query.limit) || 15
+        limit= limit >25 ? 15:limit
         const skip= (page-1)*limit
 
         const connectionRequests = await ConnectionRequest.find({

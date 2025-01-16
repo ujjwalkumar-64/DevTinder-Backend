@@ -2,6 +2,8 @@ import express from "express";
 import { authUser } from "../middlewares/auth.middleware.js";
 import { ConnectionRequest } from "../models/connectionRequestSchema.js";
 import { User } from "../models/userSchema.js";
+import sendEmail from "../utils/sendEmail.js"
+
 const connectionRequestRouter = express.Router()
 
 connectionRequestRouter.post("/request/send/:status/:toUserId", authUser, async (req,res) => {
@@ -37,13 +39,22 @@ connectionRequestRouter.post("/request/send/:status/:toUserId", authUser, async 
             status
         }).save()
         
+        const emailRes = await sendEmail.run("A New Friend Request from "+ req.user.firstName ,
+            req.user.firstName + " " + status + " " +toUser.firstName,
+            toUser.email
+        )
+        console.log(emailRes);
+
+        
+
         res.json({
-            message:req.user.firstName + " " + status + " " +toUser.firstName,
+            message:
+            req.user.firstName + " " + status + " " +toUser.firstName,
             data
         })
     
     } catch (error) {
-        res.send("Error: "+ error.message)
+        res.status(400).send("Error: "+ error.message)
     }
 
 })

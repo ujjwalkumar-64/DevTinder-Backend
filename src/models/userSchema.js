@@ -7,18 +7,15 @@ const userSchema = new mongoose.Schema({
     firstName:{
         type:String,
         required:true,
-        lowercase:true,
         trim:true,
         minLength:4,
         index:true,
     },
     lastName:{
         type:String,
-        required:true,
-        lowercase:true,
         trim:true,
-        minLength:4,
         index:true,
+        required:true,
         
     },
     email:{
@@ -91,7 +88,7 @@ userSchema.methods.validatePassword= async function (inputPassword){
 
 userSchema.methods.getJwt= async function () {
     
-    const token= await jwt.sign({_id: this._id},"Fguxbybudy6ery4dyugufydyuf7et",{
+    const token= await jwt.sign({_id: this._id},process.env.JWT_SECRET_KEY,{
         expiresIn:"1d"
     })
 
