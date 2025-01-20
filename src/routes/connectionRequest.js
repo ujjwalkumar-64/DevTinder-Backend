@@ -43,7 +43,7 @@ connectionRequestRouter.post("/request/send/:status/:toUserId", authUser, async 
             req.user.firstName + " " + status + " " +toUser.firstName,
             toUser.email
         )
-        console.log(emailRes);
+        
 
         
 

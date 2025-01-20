@@ -10,7 +10,7 @@ import { profileRouter } from "./routes/profile.js";
  import { connectionRequestRouter } from "./routes/connectionRequest.js";
  import { userRouter } from "./routes/user.js";
 
-
+import "./utils/cronjob.js"
 
 const app = express();
 app.use(cors({
