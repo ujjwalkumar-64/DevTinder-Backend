@@ -10,6 +10,8 @@ import { profileRouter } from "./routes/profile.js";
  import { connectionRequestRouter } from "./routes/connectionRequest.js";
  import { userRouter } from "./routes/user.js";
 
+import { paymentRouter } from "./routes/payment.js";
+
 import "./utils/cronjob.js"
 
 const app = express();
@@ -24,6 +26,7 @@ app.use("/",authRouter)
 app.use("/",profileRouter)
 app.use("/",connectionRequestRouter)
 app.use("/",userRouter)
+app.use("/",paymentRouter)
  try {
     await mongoDB()
     app.listen(process.env.PORT, ()=>{
