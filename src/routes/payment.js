@@ -70,11 +70,25 @@ paymentRouter.post("/payment/webhook",async (req,res)=>{
         payment.status=paymentDetails.status;
         await payment.save();
 
-  // update user status
+
+        if(payment.status ==="captured"){
         const user= await User.findOne({_id:payment.userId})
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
         user.membershipType= payment.notes.membershipType;
         user.isPremium=true;
         await user.save();
+        }
+        else if (payment.status === "failed") {
+            console.log(`Payment failed for Order ID: ${payment.orderId}`);
+            
+        }
+
+  // update user status
+      
+
 
 
 
