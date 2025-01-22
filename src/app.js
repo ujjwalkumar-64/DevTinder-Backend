@@ -1,7 +1,8 @@
 import express from "express"
 import 'dotenv/config';
 import { mongoDB } from "./config/mongoDB.js";
- 
+import http from "http";
+
 import cookieParser from "cookie-parser";
  
 import cors from "cors";
@@ -13,8 +14,10 @@ import { profileRouter } from "./routes/profile.js";
 import { paymentRouter } from "./routes/payment.js";
 
 import "./utils/cronjob.js"
+import initializeSocket from "./utils/socket.js";
 
 const app = express();
+
 app.use(cors({
     origin:"http://localhost:5173",
     credentials:true
@@ -27,9 +30,15 @@ app.use("/",profileRouter)
 app.use("/",connectionRequestRouter)
 app.use("/",userRouter)
 app.use("/",paymentRouter)
+
+const server = http.createServer(app);
+initializeSocket(server);
+
+
+
  try {
     await mongoDB()
-    app.listen(process.env.PORT, ()=>{
+    server.listen(process.env.PORT, ()=>{
         console.log("server is successfully listen on port 3000")
     });
 
