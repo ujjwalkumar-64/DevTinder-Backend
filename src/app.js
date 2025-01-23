@@ -15,6 +15,7 @@ import { paymentRouter } from "./routes/payment.js";
 
 import "./utils/cronjob.js"
 import initializeSocket from "./utils/socket.js";
+import chatRouter from "./routes/chat.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/",profileRouter)
 app.use("/",connectionRequestRouter)
 app.use("/",userRouter)
 app.use("/",paymentRouter)
+app.use("/",chatRouter)
 
 const server = http.createServer(app);
 initializeSocket(server);
