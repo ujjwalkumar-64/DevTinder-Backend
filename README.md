@@ -65,7 +65,7 @@ utils/ – Razorpay utilities
 🔗 Frontend Reference
 This backend is built to power the frontend of DevTinder:
 
-👉 DevTinder Frontend Repository
+👉 [DevTinder Frontend Repository](https://github.com/ujjwalkumar-64/DevTinder-Frontend)
 ```
 ```
 
