@@ -48,7 +48,7 @@ paymentRouter.post("/payment/create",authUser, async (req,res)=>{
 
 
     } catch (error) {
-        return req.statusCode(500).json({message:error.message})
+        return res.status(500).json({message:error.message})
     }
 })
 
@@ -79,6 +79,7 @@ paymentRouter.post("/payment/webhook",async (req,res)=>{
         }
         user.membershipType= payment.notes.membershipType;
         user.isPremium=true;
+        user.videoCallPermission = true;
         await user.save();
         }
         else if (payment.status === "failed") {

@@ -6,38 +6,59 @@ import { validateEditProfileData,validateSignupData } from "../utils/validation.
 
 const authRouter = express.Router()
 
-authRouter.post("/signup",async (req,res)=>{
+import axios from "axios";
+
+authRouter.post("/signup", async (req, res) => {
     try {
         validateSignupData(req);
-        const {firstName,lastName,email,password,age,gender,photoUrl,about,skills} = req.body
-    
-        const hashPassword = await bcrypt.hash(password,10);
+        const { firstName, lastName, email, password, age, gender, photoUrl, about, skills, githubUsername } = req.body;
+
+        let githubData = {};
+        if (githubUsername) {
+            // Fetch GitHub user details
+            const githubResponse = await axios.get(`https://api.github.com/users/${githubUsername}`);
+            githubData = {
+                photoUrl: githubResponse.data.avatar_url,
+                about: githubResponse.data.bio || "GitHub Developer",
+            };
+
+            // Fetch repositories to infer skills
+            const reposResponse = await axios.get(`https://api.github.com/users/${githubUsername}/repos`);
+            const languages = new Set();
+            reposResponse.data.forEach(repo => {
+                if (repo.language) {
+                    languages.add(repo.language);
+                }
+            });
+
+            githubData.skills = Array.from(languages).slice(0, 10); // Limit to 10 skills
+        }
+
+        const hashPassword = await bcrypt.hash(password, 10);
         const user = new User({
             firstName,
             lastName,
             email,
-            password:hashPassword,
+            password: hashPassword,
             age,
-            gender,
-            photoUrl,
-            about,
-            skills
-        })
-    
-        const savedUser= await user.save()
-        const token= await savedUser.getJwt();
-            res.cookie("token",token,{
-                expires: new Date(Date.now()+ 1 * 3600000)
-            })
-            
-          
-        res.json({message:"user added successfully!", data: savedUser})
+            gender: githubData.gender || gender,
+            photoUrl: githubData.photoUrl || photoUrl,
+            about: githubData.about || about,
+            skills: githubData.skills || skills,
+            githubUsername,
+        });
 
+        const savedUser = await user.save();
+        const token = await savedUser.getJwt();
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 1 * 3600000),
+        });
+
+        res.json({ message: "User added successfully!", data: savedUser });
     } catch (error) {
-        res.status(400).send("error: " + error.message)
+        res.status(400).send("Error: " + error.message);
     }
-
-})
+});
 
 authRouter.post("/login",async(req,res)=>{
     try {

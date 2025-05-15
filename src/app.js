@@ -11,6 +11,7 @@ import { profileRouter } from "./routes/profile.js";
  import { connectionRequestRouter } from "./routes/connectionRequest.js";
  import { userRouter } from "./routes/user.js";
 
+ import callRouter from "./routes/call.js";
 import { paymentRouter } from "./routes/payment.js";
 
 import "./utils/cronjob.js"
@@ -32,6 +33,7 @@ app.use("/",connectionRequestRouter)
 app.use("/",userRouter)
 app.use("/",paymentRouter)
 app.use("/",chatRouter)
+app.use("/",callRouter)
 
 const server = http.createServer(app);
 initializeSocket(server);

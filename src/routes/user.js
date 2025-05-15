@@ -56,47 +56,68 @@ userRouter.get("/user/connections",authUser, async (req,res)=>{
 })
 
 
-userRouter.get("/user/feed", authUser, async(req,res)=>{
+userRouter.get("/user/feed", authUser, async (req, res) => {
     try {
-        const loggedInUser= req.user
-        const page= parseInt(req.query.page) || 1
-        let limit= parseInt(req.query.limit) || 15
-        limit= limit >25 ? 15:limit
-        const skip= (page-1)*limit
+        const loggedInUser = req.user;
+        const page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 15;
+        limit = limit > 25 ? 15 : limit;
+        const skip = (page - 1) * limit;
+
+        // Get the user's preferred gender
+        const preferredGender = loggedInUser.preferredGender || "female";
 
         const connectionRequests = await ConnectionRequest.find({
-            $or:[
-                {fromUserId:loggedInUser._id},
-                {toUserId:loggedInUser._id}
+            $or: [
+                { fromUserId: loggedInUser._id },
+                { toUserId: loggedInUser._id }
             ]
-        }).select("fromUserId toUserId")
+        }).select("fromUserId toUserId");
 
-        const hideUsersFromFeed = new Set()
-        connectionRequests.forEach((req)=>{
+        const hideUsersFromFeed = new Set();
+        connectionRequests.forEach((req) => {
             hideUsersFromFeed.add(req.fromUserId.toString());
-            hideUsersFromFeed.add(req.toUserId.toString())}
-        )
-        
-        const users= await User.find({
-            $and:[
-                {_id: {$nin: Array.from(hideUsersFromFeed)}},
-                {_id: {$ne : loggedInUser._id}}
-            ]
+            hideUsersFromFeed.add(req.toUserId.toString());
+        });
 
-        }).select(USER_SAFE_DATA)
+        // Filter users based on preferred gender
+        const genderFilter = preferredGender === "all" 
+            ? { _id: { $nin: Array.from(hideUsersFromFeed) } }
+            : { 
+                _id: { $nin: Array.from(hideUsersFromFeed) }, 
+                gender: preferredGender 
+            };
+
+        const users = await User.find({
+            $and: [
+                genderFilter,
+                { _id: { $ne: loggedInUser._id } }
+            ]
+        })
+        .select(USER_SAFE_DATA)
         .skip(skip)
-        .limit(limit)
+        .limit(limit);
 
         res.json({
-            message:"data fetch successfully",
-            data:users
-        })
+            message: "Data fetched successfully",
+            data: users,
+        });
     } catch (error) {
-        res.status(400).send("ERROR: " + error.message)
+        res.status(400).send("ERROR: " + error.message);
     }
-    
-})
+});
 
+userRouter.get("/user/video-call-permission", authUser, async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user.isPremium || !user.videoCallPermission) {
+            return res.status(403).json({ message: "User does not have video call permissions" });
+        }
+        res.json({ message: "User has video call permissions" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 export {
     userRouter

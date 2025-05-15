@@ -79,6 +79,25 @@ const userSchema = new mongoose.Schema({
             }
         }
     },
+    githubUsername: {
+        type: String,
+        unique: true,
+        sparse: true, // Allow null values for users who don't provide GitHub ID
+        validate(value) {
+            if (value && !/^[a-zA-Z0-9-]+$/.test(value)) {
+                throw new Error("GitHub username must be alphanumeric and can include hyphens");
+            }
+        }
+    },
+    preferredGender: {
+        type: String,
+        enum: ["male", "female", "all"],
+        default: "all",   
+    },
+    videoCallPermission: {
+        type: Boolean,
+        default: false, // Only premium users will have video call permission
+    },
     
     
 },{timestamps:true})
@@ -102,5 +121,17 @@ userSchema.methods.getJwt= async function () {
     return token;
 }
 
+userSchema.pre("save", function (next) {
+    if (!this.preferredGender || this.preferredGender === "all") {
+        if (this.gender === "male") {
+            this.preferredGender = "female";
+        } else if (this.gender === "female") {
+            this.preferredGender = "male";
+        } else {
+            this.preferredGender = "all";  
+        }
+    }
+    next();
+});
 
 export const User = mongoose.model("User",userSchema)
