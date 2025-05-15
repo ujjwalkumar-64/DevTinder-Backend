@@ -1,7 +1,6 @@
 import express from "express"
 import { authUser } from "../middlewares/auth.middleware.js";
 import { Chat } from "../models/chat.js";
-import path from "path";
 
 const chatRouter= express.Router();
 

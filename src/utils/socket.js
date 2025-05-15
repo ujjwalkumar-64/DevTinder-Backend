@@ -79,6 +79,68 @@ const initializeSocket = (server) =>{
 
         });
 
+        // // Handle start of a call
+        // socket.on("startCall", async ({ userId, targetUserId }) => {
+        //     try {
+        //         const newCall = new CallHistory({
+        //             callerId: userId,
+        //             receiverId: targetUserId,
+        //             startTime: new Date(),
+        //         });
+        //         const savedCall = await newCall.save();
+        //         io.to(getSecretRoomId(userId, targetUserId)).emit("callStarted", savedCall);
+        //     } catch (error) {
+        //         console.log("Error logging call start: ", error);
+        //     }
+        // });
+
+        // // Handle signaling data exchange
+        // socket.on("signalData", ({ userId, targetUserId, signal }) => {
+        //     const roomId = getSecretRoomId(userId, targetUserId);
+        //     io.to(roomId).emit("signalDataReceived", { userId, signal });
+        // });
+
+        //  // Handle end of a call
+        // socket.on("endCall", async ({ callId, status }) => {
+        //     try {
+        //         const call = await CallHistory.findById(callId);
+        //         if (call) {
+        //             call.endTime = new Date();
+        //             call.status = status || "completed";
+        //             await call.save();
+        //             io.to(getSecretRoomId(call.callerId, call.receiverId)).emit("callEnded", call);
+        //         }
+        //     } catch (error) {
+        //         console.log("Error logging call end: ", error);
+        //     }
+        // });
+
+    
+            // Handle video call initiation
+            socket.on("joinRoom", async ({ firstName,userId,targetUserId }) => {
+                const roomId = getSecretRoomId(userId,targetUserId,);
+                console.log(`${firstName} joining video room: + ${roomId}`);
+                socket.join(roomId);
+                io.to(roomId).emit("callStarted", { targetUserId, userId, roomId });
+            });
+ 
+
+
+            // Handle WebRTC signaling data
+            socket.on("signalData", ({ userId,targetUserId, signalData }) => {
+                 const roomId = getSecretRoomId(userId,targetUserId,);
+                    console.log(`Signal data sent to room: ${roomId}`);
+                io.to(roomId).emit("signalDataReceived", signalData);
+            });
+
+            // Handle call end
+            socket.on("endCall", async ({ callId, roomId }) => {
+                io.to(roomId).emit("callEnded", { callId });
+                socket.leave(roomId);
+            });
+
+            
+    
         socket.on("disconnect",()=>{
             
         })
