@@ -2,149 +2,120 @@ import { Server } from "socket.io";
 import crypto from "crypto";
 import { Chat } from "../models/chat.js";
 import { ConnectionRequest } from "../models/connectionRequestSchema.js";
+import { runCodeWithJudge0 } from "./judgeO.js";
 
+const getSecretRoomId = (userId, targetUserId) => {
+  return crypto
+    .createHash("sha256")
+    .update([userId, targetUserId].sort().join("_"))
+    .digest("hex");
+};
 
-const getSecretRoomId= (userId,targetUserId)=>{
-    return crypto.createHash("sha256")
-    .update([userId,targetUserId].sort().join("_"))
-    .digest("hex")
-}
+const initializeSocket = (server) => {
+  const io = new Server(server, {
+    cors: {
+      origin: "http://localhost:5173",
+    },
+  });
 
-
-const initializeSocket = (server) =>{
-    const io = new Server(server,{
-        cors:{
-            origin:"http://localhost:5173",
-        }
+  io.on("connection", (socket) => {
+    // --- CHAT
+    socket.on("joinChat", ({ firstName, userId, targetUserId }) => {
+      const roomId = getSecretRoomId(userId, targetUserId);
+      socket.join(roomId);
     });
 
-    io.on("connection",(socket)=>{
-       
-        socket.on("joinChat",({firstName,userId,targetUserId})=>{
-            const roomId = getSecretRoomId(userId,targetUserId); 
-            console.log(firstName+" joining room: "+roomId);
-            socket.join(roomId);
-        }); 
+    socket.on(
+      "sendMessage",
+      async ({ firstName, lastName, userId, targetUserId, text }) => {
+        try {
+          const roomId = getSecretRoomId(userId, targetUserId);
+          const checkFriendship = await ConnectionRequest.findOne({
+            $or: [
+              {
+                fromUserId: targetUserId,
+                toUserId: userId,
+                status: "accepted",
+              },
+              {
+                fromUserId: userId,
+                toUserId: targetUserId,
+                status: "accepted",
+              },
+            ],
+          });
+          if (!checkFriendship) throw new Error("connection does not exist");
+          let chat = await Chat.findOne({
+            participants: { $all: [userId, targetUserId] },
+          });
+          if (!chat) {
+            chat = new Chat({
+              participants: [userId, targetUserId],
+              messages: [],
+            });
+          }
+          chat.messages.push({ senderId: userId, text });
+          await chat.save();
+          io.to(roomId).emit("messageReceived", { firstName, text, lastName });
+        } catch (error) {
+          console.log("error in message save : ", error);
+        }
+      }
+    );
 
-        socket.on("sendMessage", async ({firstName,lastName,
-            userId,
-            targetUserId,
-            text})=>{
-               
+    // --- VIDEO CALL
+    socket.on("joinRoom", ({ firstName, userId, targetUserId }) => {
+      const roomId = getSecretRoomId(userId, targetUserId);
+      socket.join(roomId);
+      io.to(roomId).emit("callStarted", { targetUserId, userId, roomId });
+    });
 
-                //save message to db
-                try { 
-                        const roomId = getSecretRoomId(userId,targetUserId);
-                        console.log(firstName+ " " + text)
+    socket.on("signalData", ({ userId, targetUserId, signalData }) => {
+      const roomId = getSecretRoomId(userId, targetUserId);
+      io.to(roomId).emit("signalDataReceived", {
+        signalData,
+        senderId: userId,
+      });
+    });
 
-                        // check if friend or not
+    socket.on("endCall", async ({ callId, roomId, userId, targetUserId }) => {
+      const actualRoomId = roomId || getSecretRoomId(userId, targetUserId);
+      io.to(actualRoomId).emit("callEnded", { callId });
+      socket.leave(actualRoomId);
+    });
 
-                        const checkFriendship= await ConnectionRequest.findOne({
-                            $or:[
-                                {fromUserId:targetUserId,toUserId:userId , status:"accepted"},
-                                {fromUserId:userId,toUserId:targetUserId, status:"accepted"}
-                            ],
-                        })
+    // --- COLLABORATIVE CODE SANDBOX
 
-                        if(!checkFriendship){
-                            throw new Error("connection doesnot exist");
-                        }
+    socket.on("joinCodeRoom", ({ roomId, username }) => {
+      socket.join(roomId);
+      console.log(`${username} joined code room: ${roomId}`);
+    });
 
-                        let chat= await Chat.findOne({
-                       participants: {$all:[userId,targetUserId]},
-                    })
+    socket.on("contentChanged", ({ content, roomId }) => {
+      socket.to(roomId).emit("contentChanged", { content });
+    });
 
-                    if(!chat){
-                        chat= new Chat({
-                            participants:[userId,targetUserId],
-                            messages:[]
-                        });
-                    }
+    socket.on("languageChanged", ({ language, roomId }) => {
+      socket.to(roomId).emit("languageChanged", { language });
+    });
 
-                    chat.messages.push({
-                        senderId:userId,
-                        text
-                    });
-
-                    await chat.save();
-
-                    io.to(roomId).emit("messageReceived",{firstName,text ,lastName}) //timeStamp:new Date()
-
-                } catch (error) {
-                    console.log("error in message save : ",error)
-                    
-                }
-
-               
-
+    socket.on("runCode", async ({ code, language, roomId }) => {
+      try {
+        const result = await runCodeWithJudge0(language, code);
+        io.to(roomId).emit("codeOutput", {
+          success: true,
+          output: result.output || result,
         });
+      } catch (err) {
+        io.to(roomId).emit("codeOutput", {
+          success: false,
+          error: err.message,
+        });
+      }
+    });
 
-        // // Handle start of a call
-        // socket.on("startCall", async ({ userId, targetUserId }) => {
-        //     try {
-        //         const newCall = new CallHistory({
-        //             callerId: userId,
-        //             receiverId: targetUserId,
-        //             startTime: new Date(),
-        //         });
-        //         const savedCall = await newCall.save();
-        //         io.to(getSecretRoomId(userId, targetUserId)).emit("callStarted", savedCall);
-        //     } catch (error) {
-        //         console.log("Error logging call start: ", error);
-        //     }
-        // });
+    socket.on("disconnect", () => {});
+  });
+};
 
-        // // Handle signaling data exchange
-        // socket.on("signalData", ({ userId, targetUserId, signal }) => {
-        //     const roomId = getSecretRoomId(userId, targetUserId);
-        //     io.to(roomId).emit("signalDataReceived", { userId, signal });
-        // });
-
-        //  // Handle end of a call
-        // socket.on("endCall", async ({ callId, status }) => {
-        //     try {
-        //         const call = await CallHistory.findById(callId);
-        //         if (call) {
-        //             call.endTime = new Date();
-        //             call.status = status || "completed";
-        //             await call.save();
-        //             io.to(getSecretRoomId(call.callerId, call.receiverId)).emit("callEnded", call);
-        //         }
-        //     } catch (error) {
-        //         console.log("Error logging call end: ", error);
-        //     }
-        // });
-
-    
-            // Handle video call initiation
-            socket.on("joinRoom", async ({ firstName,userId,targetUserId }) => {
-                const roomId = getSecretRoomId(userId,targetUserId,);
-                console.log(`${firstName} joining video room: + ${roomId}`);
-                socket.join(roomId);
-                io.to(roomId).emit("callStarted", { targetUserId, userId, roomId });
-            });
- 
-
-
-            // Handle WebRTC signaling data
-            socket.on("signalData", ({ userId,targetUserId, signalData }) => {
-                 const roomId = getSecretRoomId(userId,targetUserId,);
-                    console.log(`Signal data sent to room: ${roomId}`);
-                io.to(roomId).emit("signalDataReceived", signalData);
-            });
-
-            // Handle call end
-            socket.on("endCall", async ({ callId, roomId }) => {
-                io.to(roomId).emit("callEnded", { callId });
-                socket.leave(roomId);
-            });
-
-            
-    
-        socket.on("disconnect",()=>{
-            
-        })
-    })
-}
-
-export default initializeSocket; 
+export default initializeSocket;

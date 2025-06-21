@@ -17,7 +17,7 @@ import { paymentRouter } from "./routes/payment.js";
 import "./utils/cronjob.js"
 import initializeSocket from "./utils/socket.js";
 import chatRouter from "./routes/chat.js";
-
+import sandboxRouter from "./routes/sandbox.js";
 const app = express();
 
 app.use(cors({
@@ -34,6 +34,7 @@ app.use("/",userRouter)
 app.use("/",paymentRouter)
 app.use("/",chatRouter)
 app.use("/",callRouter)
+app.use("/api/sandbox", sandboxRouter);
 
 const server = http.createServer(app);
 initializeSocket(server);
