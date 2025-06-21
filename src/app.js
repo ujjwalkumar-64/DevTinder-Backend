@@ -22,7 +22,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://devfortinder.netlify.app/",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
